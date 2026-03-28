@@ -1,1 +1,55 @@
 
+const navigator = {}; // A dummy assignment loading the jsrsasign library will expect the presence of the navigator object
+const window = {};    // A dummy assignment loading the jsrsasign library will expect the presence of the window object
+
+// Load jsrsasign from CDN
+pm.sendRequest(
+   "https://kjur.github.io/jsrsasign/jsrsasign-latest-all-min.js",
+    function (err, res) {
+        if (err) {
+           console.error("Failed to load jsrsasign:", err);
+           return;
+       }
+
+        eval(res.text());//Executing the loaded library to bring in the functions of the library in scope
+
+        const clientId    = pm.environment.get("clientId")       || pm.collectionVariables.get("clientId");
+        const username    = pm.environment.get("salesforceUser") || pm.collectionVariables.get("salesforceUser");
+        const privateKey  = pm.environment.get("privateKey")     || pm.collectionVariables.get("privateKey");
+        const audience    = pm.environment.get("audience")       || pm.collectionVariables.get("audience") || "https://login.salesforce.com";
+
+        if (!clientId || !username || !privateKey) {
+            console.error("Missing required variables: clientId, salesforceUser, or privateKey");
+            return;
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+
+        const header = {
+            alg: "RS256",
+            typ: "JWT"
+        };
+
+        const payload = {
+            iss: clientId,
+            sub: username,
+            aud: audience,
+            exp: now + 300  // 5 minutes from now
+        };
+
+        try {
+            const key = KEYUTIL.getKey(privateKey);
+            const jwt = KJUR.jws.JWS.sign(
+                "RS256",
+                JSON.stringify(header),
+                JSON.stringify(payload),
+                key
+            );
+
+            pm.variables.set("jwt_token", jwt);//set the constructed JWT in a global variable for initiating the request
+            console.log("JWT generated successfully and stored in jwt_token variable.");
+        } catch (e) {
+            console.error("Error signing JWT:", e);
+        }
+    }
+);

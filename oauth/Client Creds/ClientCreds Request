@@ -1,0 +1,8 @@
+//For salesforce integrations, ensure that "Client Credentials Flow" is enabled in the connected app and assigned with an active salesforce user
+//Ensure that the user's profiles is tied to the connected app as well if the "Permitted users" are set to "Admin approved users are pre-authorized"
+curl --location 'https://accenturesolutionspvtlt190-dev-ed.my.salesforce.com/services/oauth2/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--header 'Cookie: BrowserId=qAiKIpojEfC7JoUU2n0UEA; CookieConsentPolicy=0:0; LSKey-c$CookieConsentPolicy=0:0; BrowserId=qAiKIpojEfC7JoUU2n0UEA; CookieConsentPolicy=0:1; LSKey-c$CookieConsentPolicy=0:1' \
+--data-urlencode 'grant_type=client_credentials' \
+--data-urlencode 'client_id={{clientId}}' \
+--data-urlencode 'client_secret={{clientSecret}}'

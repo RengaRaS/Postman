@@ -1,0 +1,267 @@
+{
+	"info": {
+		"_postman_id": "bea8554a-c74b-41d8-8de5-bfad8471fab6",
+		"name": "Learning",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Access token (JWT)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "c7e5b824-6d5a-42dd-953e-92e67ab50123",
+						"exec": [
+							"// ===== Salesforce JWT Bearer Flow - Pre-request Script =====",
+							"// Uses jsrsasign to sign a JWT with RS256 for the JWT Bearer grant type.",
+							"// Required environment/collection variables:",
+							"//   - clientId      : Salesforce Connected App Consumer Key",
+							"//   - salesforceUser: Salesforce username (sub claim)",
+							"//   - privateKey    : RSA private key in PEM format (-----BEGIN RSA PRIVATE KEY-----)",
+							"//   - audience      : (optional) defaults to https://login.salesforce.com",
+							"",
+							"const navigator = {}; // jsrsasign workaround",
+							"const window = {};    // jsrsasign workaround",
+							"",
+							"// Load jsrsasign from CDN",
+							"pm.sendRequest(",
+							"   \"https://kjur.github.io/jsrsasign/jsrsasign-latest-all-min.js\",",
+							"    function (err, res) {",
+							"        if (err) {",
+							"           console.error(\"Failed to load jsrsasign:\", err);",
+							"           return;",
+							"       }",
+							"",
+							"        eval(res.text());",
+							"",
+							"        const clientId    = pm.environment.get(\"clientId\")       || pm.collectionVariables.get(\"clientId\");",
+							"        const username    = pm.environment.get(\"salesforceUser\") || pm.collectionVariables.get(\"salesforceUser\");",
+							"        const privateKey  = pm.environment.get(\"privateKey\")     || pm.collectionVariables.get(\"privateKey\");",
+							"        const audience    = pm.environment.get(\"audience\")       || pm.collectionVariables.get(\"audience\") || \"https://login.salesforce.com\";",
+							"",
+							"        if (!clientId || !username || !privateKey) {",
+							"            console.error(\"Missing required variables: clientId, salesforceUser, or privateKey\");",
+							"            return;",
+							"        }",
+							"",
+							"        const now = Math.floor(Date.now() / 1000);",
+							"",
+							"        const header = {",
+							"            alg: \"RS256\",",
+							"            typ: \"JWT\"",
+							"        };",
+							"",
+							"        const payload = {",
+							"            iss: clientId,",
+							"            sub: username,",
+							"            aud: audience,",
+							"            exp: now + 300  // 5 minutes from now",
+							"        };",
+							"",
+							"        try {",
+							"            const key = KEYUTIL.getKey(privateKey);",
+							"            const jwt = KJUR.jws.JWS.sign(",
+							"                \"RS256\",",
+							"                JSON.stringify(header),",
+							"                JSON.stringify(payload),",
+							"                key",
+							"            );",
+							"",
+							"            pm.variables.set(\"jwt_token\", jwt);",
+							"            console.log(\"JWT generated successfully and stored in jwt_token variable.\");",
+							"        } catch (e) {",
+							"            console.error(\"Error signing JWT:\", e);",
+							"        }",
+							"    }",
+							");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "bfe75221-4238-4843-8425-362c75c49d05",
+						"exec": [
+							"var responseXML = xml2Json(pm.response.text());\r",
+							"\r",
+							"// Test the response status code\r",
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Test response time\r",
+							"pm.test(\"Response time is less than 200ms\", function () {\r",
+							"  pm.expect(pm.response.responseTime).to.be.below(200);\r",
+							"});\r",
+							"\r",
+							"// Validate response schema\r",
+							"pm.test(\"Schema is valid\", function () {\r",
+							"  var schema = {\r",
+							"    type: \"object\",\r",
+							"    properties: {\r",
+							"      // Define expected properties here\r",
+							"    },\r",
+							"    required: [] // Add required properties if any\r",
+							"  };\r",
+							"\r",
+							"  pm.expect(tv4.validate(responseXML, schema)).to.be.true;\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"id": "24747075-3630-4ac4-aff6-8785a98a10a0",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true,
+				"disabledSystemHeaders": {
+					"content-type": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded"
+					},
+					{
+						"key": "client_id",
+						"value": "{{clientId}}",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "client_secret",
+						"value": "{{clientSecret}}",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "grant_type",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"type": "text",
+							"key": "grant_type",
+							"value": "urn:ietf:params:oauth:grant-type:jwt-bearer"
+						},
+						{
+							"type": "text",
+							"key": "client_secret",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"type": "text",
+							"key": "username",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"type": "text",
+							"key": "password",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"type": "text",
+							"key": "client_id",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "assertion",
+							"value": "{{jwt_token}}",
+							"type": "text",
+							"uuid": "742b4e9d-1885-4d44-9221-0cf80e956013"
+						}
+					]
+				},
+				"url": "https://login.salesforce.com/services/oauth2/token",
+				"description": "Generated from cURL: curl --location 'https://commonspiritcc--ocprodsupt.sandbox.my.salesforce.com/services/oauth2/token' \\\r\n--header 'Accept: application/json' \\\r\n--header 'Content-Type: application/x-www-form-urlencoded' \\\r\n--header 'Cookie: BrowserId=qAiKIpojEfC7JoUU2n0UEA; CookieConsentPolicy=0:1; LSKey-c$CookieConsentPolicy=0:1' \\\r\n--data-urlencode 'grant_type=password' \\\r\n--data-urlencode 'client_secret=' \\\r\n--data-urlencode 'username=' \\\r\n--data-urlencode 'password=' \\\r\n--data-urlencode 'client_id='"
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"id": "279c6a6d-f7ee-4c68-9851-309cc7ecb064",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "e4bdc193-bac1-4e36-b39d-6d84c56ba90a",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "5a8d7623-bfad-490e-a84b-7921aa0f8749",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "clientId",
+			"value": ""
+		},
+		{
+			"key": "clientSecret",
+			"value": ""
+		},
+		{
+			"key": "salesforceUser",
+			"value": ""
+		},
+		{
+			"key": "privateKey",
+			"value": ""
+		},
+		{
+			"key": "audience",
+			"value": ""
+		}
+	]
+}

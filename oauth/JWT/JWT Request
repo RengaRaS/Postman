@@ -1,1 +1,7 @@
 
+curl --location 'https://login.salesforce.com/services/oauth2/token' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--header 'Cookie: BrowserId=qAiKIpojEfC7JoUU2n0UEA; CookieConsentPolicy=0:0; LSKey-c$CookieConsentPolicy=0:0' \
+--data-urlencode 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer' \
+--data-urlencode 'assertion={{jwt_token}}'
